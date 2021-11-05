@@ -32,6 +32,8 @@ server = app.server
 NAVIGATION BARS - BEGINS
 """
 gob_logo = "https://raw.githubusercontent.com/Silvertongue26/imss_dashboard/7cf1c60afaf78a9385dce9264855983fba9d1574/assets/imgs/logoheader.svg"
+
+#Creation of main navbar
 gob_bar = dbc.Row(
     [
         dbc.Row(style={"width": "100%", "marginTop":"5px"}, children=[
@@ -51,6 +53,7 @@ gob_bar = dbc.Row(
     className="g-0 ",
     align="center",
 )
+#Creation of main navbar for mobile
 navbar = dbc.Navbar(
     dbc.Container(
         [
@@ -87,6 +90,7 @@ navbar = dbc.Navbar(
     dark=True,
 )
 
+#Creation of secondary navbar
 sub_bar = dbc.Row(
     [
         dbc.Row(style={"width": "100%", "marginTop":"5px"}, children=[
@@ -102,6 +106,7 @@ sub_bar = dbc.Row(
     className="g-0 ",
     align="center",
 )
+#Creation of secondary navbar for mobile
 sub_navbar = dbc.Navbar(
     dbc.Container(
         [
@@ -132,37 +137,36 @@ sub_navbar = dbc.Navbar(
 """
 NAVIGATION BARS - END
 """
+
 """
 GRAPH 1 - DATA MANIPULATION BEGINS
 """
 #Data cleaning for graph 1
 df_vacc_mex = pd.read_csv("https://raw.githubusercontent.com/Silvertongue26/imss_dashboard/main/data/graph1_vaccinated_mx.csv")
+#Elimination of useless columns
 df_vacc_mex.pop('location')
 df_vacc_mex.pop('vaccine')
-#df_vacc_mex.pop('people_vaccinated')
-#df_vacc_mex.pop('people_fully_vaccinated')
 df_vacc_mex.pop('total_vaccinations')
 df_vacc_mex.pop('total_boosters')
 df_vacc_mex.pop('source_url')
 
 
-#Create object
+#Create figure object
 fig = go.Figure()
 
+#Adding trace for total vaccinated
 fig.add_trace(go.Scatter(x=list(df_vacc_mex.date), y=list(df_vacc_mex.people_vaccinated),
                          mode='lines',
                          name='Total de vacunados'
                          ))
+#Adding trace for people with 2 vaccines on
 fig.add_trace(go.Scatter(x=list(df_vacc_mex.date), y=list(df_vacc_mex.people_fully_vaccinated),
                          mode='lines',
                          name='Esquemas completos'
                          ))
-#fig.add_trace(go.Scatter(x=list(df_vacc_mex.date), y=list(df_vacc_mex.total_vaccinations),
-                         #mode='lines',
-                         #name='Total de vacunas'))
 
 
-# Set plot laypout options
+# Set plot layout options for displaying keys inside graph
 fig.update_layout(
     legend=dict(
         # title_text="Avance de vacunación en México"
@@ -215,12 +219,13 @@ GRAPH 2 - DATA MANIPULATION BEGINS
 """
 #Data cleaning for graph 2
 df_vacc_imss = pd.read_csv("data/graph2_vaccinated_IMSS.csv")
+#Converting the column date into date format
 df_vacc_imss.date = pd.to_datetime(df_vacc_imss.date)
 df_vacc_imss.date = df_vacc_imss.date.dt.strftime('%Y-%m-%d')
 
 percent = []
+#Calculating the percentage of IMSS workers are vaccinated. Total workers = 437114
 for index, row in df_vacc_imss.iterrows():
-    #row['percentage'] = row.vaccinated
     percent.insert(index, round( ((row.vaccinated*100)/437114) , 2))
 
 df_vacc_imss['percentage'] = percent
@@ -228,7 +233,7 @@ df_vacc_imss['percentage'] = percent
 #Create object figure
 fig2 = go.Figure()
 
-#print(df_vacc_mex.date)
+#Adding trace to graph and styling the hover window
 fig2.add_trace(go.Scatter(x=list(df_vacc_imss.date), y=list(df_vacc_imss.vaccinated),
                          mode='lines',
                          name='Personal IMSS vacunado',
@@ -237,10 +242,9 @@ fig2.add_trace(go.Scatter(x=list(df_vacc_imss.date), y=list(df_vacc_imss.vaccina
                             '<i><b>Vacunados</b></i>: %{y:vaccinated}<br>'+
                             '<i><b>Porcentaje</b></i>: %{text}<br>',
                             text=['{}%'.format(i + 1) for i in df_vacc_imss.percentage],
-                         #customdata=["vaccinated", "percentage"]
                          ))
 
-# Set plot laypout options
+# Set plot layoout options
 fig2.update_layout(legend=dict(
     yanchor="top",
     y=0.99,
@@ -248,7 +252,7 @@ fig2.update_layout(legend=dict(
     x=0.01,
 ))
 
-# Add range slider
+# Adding range slider
 fig2.update_layout(
     xaxis=dict(
         rangeselector = dict(
@@ -280,22 +284,24 @@ fig2.update_layout(
         rangeslider = dict(visible=True),
         type = "date"
     ),
-    #hovermode='aa'
 )
 """
 GRAPH 2 - DATA MANIPULATION ENDS
 """
 
 """
-GRAPH 3 - DATA MANIPULATION ENDS
+GRAPH 3 - DATA MANIPULATION BEGINS
 """
 #Data cleaning for graph 3
+#Setting array with strains of interest to IMSS
 strains = ['Alpha', 'Beta', 'Delta', 'Epsilon', 'Gamma', 'Lambda', 'Mu', 'Other']
 
+#To avoid cleaning data again and again, we store it and check if the file raph3_strains_cleaned.csv exists
 if os.path.isfile("data/graph3_strains_cleaned.csv"):
     df_strains = pd.read_csv("data/graph3_strains_cleaned.csv")
 else:
     df_strains_raw = pd.read_csv("data/graph3_strains.csv")
+    #Deleting useless columns
     df_strains_raw.pop('country')
     df_strains_raw.pop('country_code')
     df_strains_raw.pop('source')
@@ -305,9 +311,11 @@ else:
     df_strains_raw.pop('valid_denominator')
     df_strains_raw.pop('percent_variant')
 
+    #Filling empty values with 0
     df_strains_raw.number_detections_variant.fillna(0, inplace=True)
     df_strains_raw.number_sequenced_known_variant.fillna(0, inplace=True)
 
+    #Getting unique values of year_week column
     weeks = df_strains_raw['year_week'].unique()
 
     records = []
@@ -483,11 +491,11 @@ body = dbc.Container([
                 dbc.Row([
                     dbc.Col([
                         html.H3(["Vigilancia Genómica"], style={"textAlign": "center"}),
-                        html.P("La Red Regional de Vigilancia Genómica COVID-19 fue creada en 2020, no sólo como un mecanismo para fortalecer la capacidad de secuenciación de los laboratorios participantes,"
-                               " si no como estrategia para incrementar la cantidad de datos de secuenciación disponibles a nivel global,"
+                        html.P("La Red Regional de Vigilancia Genómica COVID-19 fue creada en 2020, no solo como un mecanismo para fortalecer la capacidad de secuenciación de los laboratorios participantes,"
+                               " sino como estrategia para incrementar la cantidad de datos de secuenciación disponibles a nivel global,"
                                " lo cual es crítico para mejorar el desarrollo de protocolos de diagnóstico,"
                                " generar información para el desarrollo de vacunas y para entender mejor los patrones de evolución del SARS-CoV-2."
-                               "Actualmente se han encontrado 152.456 secuencias del virus"),
+                               " Actualmente se han encontrado 152.456 secuencias del virus."),
                         html.Div([dcc.Graph(figure=fig3)])
                     ], className='col-xl-12 col-lg-12 col-md-12 col-sm-12',
                     ),
@@ -505,7 +513,7 @@ body = dbc.Container([
                                "inmunológica que provee para evitar un futuro contagio, la hospitalización o una eventual"
                                " muerte, por el otro. Según la Organización Mundial de la Salud (OMS), se han registrado "
                                "hasta mayo de 2021 un total de 13 vacunas distintas contra el COVID-19."),
-                        html.P("La OMS, ha aprobado el uso de emergencia de los fármacos de Pfizer/BioNTech, AstraZeneca, Janssen, Moderna, Sinopharm y Sinovac, si bien ha asegurado que analiza otras vacunas ampliamente usadas como Sputnik V. La OMS y la comunidad científica consideran que una vacuna, contra cualquier enfermedad, es exitosa cuando su efectividad supera el 50 %, como pasa con todas las aprobadas contra la covid."),
+                        html.P("La OMS ha aprobado el uso de emergencia de los fármacos de Pfizer/BioNTech, AstraZeneca, Janssen, Moderna, Sinopharm y Sinovac, si bien ha asegurado que analiza otras vacunas ampliamente usadas como Sputnik V. La OMS y la comunidad científica consideran que una vacuna, contra cualquier enfermedad, es exitosa cuando su efectividad supera el 50 %, como pasa con todas las aprobadas contra la covid."),
                         html.Div([dcc.Graph(figure=fig4)])
                     ], className='col-xl-12 col-lg-12 col-md-12 col-sm-12',
                     ),
@@ -520,7 +528,7 @@ body = dbc.Container([
                     dbc.Col([
                         html.H3(["Conclusiones"], style={"textAlign": "center"}),
                         html.P("Conforme a lo presentado en el análisis previo, se puede observar una gran parte de "
-                               "la población, con una sola dósis o sin dósis alguna. Forzando a la adquisición de nuevas "
+                               "la población, con una sola dosis o sin dosis alguna. Forzando a la adquisición de nuevas "
                                "vacunas, debido a que en muchos casos, el tiempo de protección de la vacuna, ya ha expirado. "
                                "Teniendo en mente que el virus del COVID-19 se volverá una enfermedad concurrente, se tiene que pensar "
                                "en la adquisición constante de vacunas y un esquema de vacunación permanente. "),
@@ -537,14 +545,6 @@ body = dbc.Container([
                 dbc.Row([
                     dbc.Col([
                         html.H3(["Referencias"], style={"textAlign": "left"}),
-                        html.P("-¿Cuál es la efectividad actual de las vacunas contra el Covid-19? "),
-                        html.A('https://www.forbes.com.mx/cual-es-la-efectividad-actual-de-las-vacunas-contra-el-covid-19/', href='https://www.forbes.com.mx/cual-es-la-efectividad-actual-de-las-vacunas-contra-el-covid-19/'),
-                        html.Br(),
-                        html.Br(),
-                        html.P("-Characteristics of Persons with Covid-19 "),
-                        html.A('https://www.nejm.org/doi/full/10.1056/nejmoa2108891', href='https://www.nejm.org/doi/full/10.1056/nejmoa2108891'),
-                        html.Br(),
-                        html.Br(),
                         html.P("-Mexcov2 "),
                         html.A('http://mexcov2.ibt.unam.mx:8080/COVID-TRACKER/tablero', href='http://mexcov2.ibt.unam.mx:8080/COVID-TRACKER/tablero'),
                         html.Br(),
@@ -559,10 +559,6 @@ body = dbc.Container([
                         html.Br(),
                         html.P("-European Centre for Disease Prevention and Control "),
                         html.A('https://www.ecdc.europa.eu/en/covid-19/variants-concern', href='https://www.ecdc.europa.eu/en/covid-19/variants-concern'),
-                        html.Br(),
-                        html.Br(),
-                        html.P("-Mexico Covid-19 Line List "),
-                        html.A('https://global.health/deepdive/mexico', href='https://global.health/deepdive/mexico'),
                         html.Br(),
                         html.Br(),
                         html.P("-Tracking of Variants "),
@@ -580,12 +576,26 @@ body = dbc.Container([
                 className="col-xl-12 col-lg-12 col-md-12 col-sm-12",
             ),
         ], style={"marginTop": "5%"}),
+        dbc.Row([
+            dbc.Col([
+                html.P("*Disclaimer: La información presentada se ha modificado para el uso que a este proyecto"
+                       " convenga. Por lo que no debe de usarse como  referencia para el análisis de la pandemia.")],
+                className="col-xl-12 col-lg-12 col-md-12 col-sm-12",
+            ),
+        ], style={"marginTop": "5%"}),
 
 ])
 """
 BODY - ENDS
 """
 
+footer = dbc.Row([
+            dbc.Col([
+                html.Img(src="assets/imgs/footer.png")],
+                className="col-xl-12 col-lg-12 col-md-12 col-sm-12",
+            ),
+        ], style={"marginTop": "5%"}
+)
 
 
 
@@ -594,6 +604,7 @@ app.layout = html.Div([
     navbar,
     sub_navbar,
     body,
+    footer
 ])
 
 """
