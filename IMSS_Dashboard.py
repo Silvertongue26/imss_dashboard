@@ -31,7 +31,7 @@ server = app.server
 """
 NAVIGATION BARS - BEGINS
 """
-gob_logo = "/assets/imgs/logoheader.svg"
+gob_logo = "https://raw.githubusercontent.com/Silvertongue26/imss_dashboard/7cf1c60afaf78a9385dce9264855983fba9d1574/assets/imgs/logoheader.svg"
 gob_bar = dbc.Row(
     [
         dbc.Row(style={"width": "100%", "marginTop":"5px"}, children=[
