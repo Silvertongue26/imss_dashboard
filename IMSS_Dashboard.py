@@ -18,7 +18,7 @@ IMPORTS END
 app = dash.Dash(
     external_stylesheets=[
         dbc.themes.BOOTSTRAP,
-        "https://raw.githubusercontent.com/Silvertongue26/imss_dashboard/main/assets/css/layout.css"
+        "https://cdn.rawgit.com/Silvertongue26/imss_dashboard/main/assets/css/layout.css"
     ],
     #assets_external_path = "/assets/css/layout.css",
     #external_scripts = []
@@ -210,6 +210,194 @@ GRAPH 1 - DATA MANIPULATION ENDS
 """
 
 
+"""
+GRAPH 2 - DATA MANIPULATION BEGINS
+"""
+#Data cleaning for graph 2
+df_vacc_imss = pd.read_csv("data/graph2_vaccinated_IMSS.csv")
+df_vacc_imss.date = pd.to_datetime(df_vacc_imss.date)
+df_vacc_imss.date = df_vacc_imss.date.dt.strftime('%Y-%m-%d')
+
+percent = []
+for index, row in df_vacc_imss.iterrows():
+    #row['percentage'] = row.vaccinated
+    percent.insert(index, round( ((row.vaccinated*100)/437114) , 2))
+
+df_vacc_imss['percentage'] = percent
+
+#Create object figure
+fig2 = go.Figure()
+
+#print(df_vacc_mex.date)
+fig2.add_trace(go.Scatter(x=list(df_vacc_imss.date), y=list(df_vacc_imss.vaccinated),
+                         mode='lines',
+                         name='Personal IMSS vacunado',
+                         hovertemplate=
+                            '<i><b>Día</b></i>: %{x:date}<br>'+
+                            '<i><b>Vacunados</b></i>: %{y:vaccinated}<br>'+
+                            '<i><b>Porcentaje</b></i>: %{text}<br>',
+                            text=['{}%'.format(i + 1) for i in df_vacc_imss.percentage],
+                         #customdata=["vaccinated", "percentage"]
+                         ))
+
+# Set plot laypout options
+fig2.update_layout(legend=dict(
+    yanchor="top",
+    y=0.99,
+    xanchor="left",
+    x=0.01,
+))
+
+# Add range slider
+fig2.update_layout(
+    xaxis=dict(
+        rangeselector = dict(
+            buttons = list([
+                dict(
+                    count = 1,
+                    label = "Último mes",
+                    step = "month",
+                    stepmode = "backward"
+                ),
+                dict(
+                    count = 6,
+                    label = "Últimos 6 meses",
+                    step = "month",
+                    stepmode = "backward"
+                ),
+                dict(count=1,
+                     label = "Último año",
+                     step = "year",
+                     stepmode = "backward"
+                ),
+                dict(
+                    count = 1,
+                    label = "Todo",
+                    step = "all"
+                )
+            ])
+        ),
+        rangeslider = dict(visible=True),
+        type = "date"
+    ),
+    #hovermode='aa'
+)
+"""
+GRAPH 2 - DATA MANIPULATION ENDS
+"""
+
+"""
+GRAPH 3 - DATA MANIPULATION ENDS
+"""
+#Data cleaning for graph 3
+strains = ['Alpha', 'Beta', 'Delta', 'Epsilon', 'Gamma', 'Lambda', 'Mu', 'Other']
+
+if os.path.isfile("data/graph3_strains_cleaned.csv"):
+    df_strains = pd.read_csv("data/graph3_strains_cleaned.csv")
+else:
+    df_strains_raw = pd.read_csv("data/graph3_strains.csv")
+    df_strains_raw.pop('country')
+    df_strains_raw.pop('country_code')
+    df_strains_raw.pop('source')
+    df_strains_raw.pop('new_cases')
+    df_strains_raw.pop('number_sequenced')
+    df_strains_raw.pop('percent_cases_sequenced')
+    df_strains_raw.pop('valid_denominator')
+    df_strains_raw.pop('percent_variant')
+
+    df_strains_raw.number_detections_variant.fillna(0, inplace=True)
+    df_strains_raw.number_sequenced_known_variant.fillna(0, inplace=True)
+
+    weeks = df_strains_raw['year_week'].unique()
+
+    records = []
+    for week in weeks:
+        for strain in strains:
+            elems = df_strains_raw.loc[(df_strains_raw.year_week == week) & (df_strains_raw.WHO_label == strain)]
+            if len(elems) != 0:
+                percentage = round((( elems.number_detections_variant.sum() * 100)/elems.number_sequenced_known_variant.sum()),2)
+            else:
+                percentage = 0
+            records.append([week, strain, percentage])
+
+    del df_strains_raw
+
+    df_strains = pd.DataFrame(records, columns = ['year_week', 'WHO_label', 'percentage'])
+    df_strains.to_csv('data/graph3_strains_cleaned.csv')
+
+
+#Convert week of the year into date
+df_strains.year_week = pd.to_datetime(df_strains['year_week'].astype(str)+'1',format="%Y-%W%w")
+
+fig3 = go.Figure()
+for elem in strains:
+    strain = df_strains.query(f"WHO_label=='{elem}'")
+    fig3.add_trace(go.Scatter(x=list(strain.year_week), y=list(strain.percentage),
+                             mode='lines+markers',
+                             name= f"{elem}"
+                             ))
+
+# Add range slider
+fig3.update_layout(
+    xaxis=dict(
+        rangeselector = dict(
+            buttons = list([
+                dict(
+                    count = 1,
+                    label = "Último mes",
+                    step = "month",
+                    stepmode = "backward"
+                ),
+                dict(
+                    count = 6,
+                    label = "Últimos 6 meses",
+                    step = "month",
+                    stepmode = "backward"
+                ),
+                dict(count=1,
+                     label = "Último año",
+                     step = "year",
+                     stepmode = "backward"
+                ),
+                dict(
+                    count = 1,
+                    label = "Todo",
+                    step = "all"
+                )
+            ])
+        ),
+        rangeslider = dict(visible=True),
+        type = "date"
+    ),
+    hovermode='x unified'
+)
+"""
+GRAPH 3 - DATA MANIPULATION ENDS
+"""
+
+"""
+GRAPH 4 - DATA MANIPULATION ENDS
+"""
+#Data cleaning for graph 3
+df_efficiency = pd.read_csv("data/graph4_efficiency.csv")
+
+fig4 = px.bar(df_efficiency, x=df_efficiency.lineage, y=df_efficiency.efficiency,
+              color=df_efficiency.brand,
+              barmode='group',
+              labels={
+                  "lineage": "Cepas",
+                  "efficiency": "Eficacia",
+                  "brand": "Vacuna"
+              },
+              )
+
+
+
+fig4.update_layout(barmode='group')
+"""
+GRAPH 4 - DATA MANIPULATION ENDS
+"""
+
 
 
 """
@@ -280,7 +468,7 @@ body = dbc.Container([
                         html.H3(["Avance de vacunación del personal IMSS"], style={"textAlign":"center"}),
                         html.P("En esta gráfica se muestra el avance de vacunación del personal laboral del IMSS incluyendo "
                                "personal médico y administrativo."),
-                        html.Div([dcc.Graph(figure=fig)])
+                        html.Div([dcc.Graph(figure=fig2)])
                     ], className='col-xl-12 col-lg-12 col-md-12 col-sm-12',
                     ),
                 ])],
@@ -300,7 +488,7 @@ body = dbc.Container([
                                " lo cual es crítico para mejorar el desarrollo de protocolos de diagnóstico,"
                                " generar información para el desarrollo de vacunas y para entender mejor los patrones de evolución del SARS-CoV-2."
                                "Actualmente se han encontrado 152.456 secuencias del virus"),
-                        html.Div([dcc.Graph(figure=fig)])
+                        html.Div([dcc.Graph(figure=fig3)])
                     ], className='col-xl-12 col-lg-12 col-md-12 col-sm-12',
                     ),
                 ])],
@@ -318,7 +506,7 @@ body = dbc.Container([
                                " muerte, por el otro. Según la Organización Mundial de la Salud (OMS), se han registrado "
                                "hasta mayo de 2021 un total de 13 vacunas distintas contra el COVID-19."),
                         html.P("La OMS, ha aprobado el uso de emergencia de los fármacos de Pfizer/BioNTech, AstraZeneca, Janssen, Moderna, Sinopharm y Sinovac, si bien ha asegurado que analiza otras vacunas ampliamente usadas como Sputnik V. La OMS y la comunidad científica consideran que una vacuna, contra cualquier enfermedad, es exitosa cuando su efectividad supera el 50 %, como pasa con todas las aprobadas contra la covid."),
-                        html.Div([dcc.Graph(figure=fig)])
+                        html.Div([dcc.Graph(figure=fig4)])
                     ], className='col-xl-12 col-lg-12 col-md-12 col-sm-12',
                     ),
                 ])],
