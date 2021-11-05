@@ -591,7 +591,7 @@ BODY - ENDS
 
 footer = dbc.Row([
             dbc.Col([
-                html.Img(src="assets/imgs/footer.png")],
+                html.Img(src="https://raw.githubusercontent.com/Silvertongue26/imss_dashboard/main/assets/imgs/footer.png")],
                 className="col-xl-12 col-lg-12 col-md-12 col-sm-12",
             ),
         ], style={"marginTop": "5%"}
