@@ -27,9 +27,10 @@ app = dash.Dash(
 )
 
 server = app.server
-
+print(pd.__version__)
 app.layout = html.Div([
         html.P("WASABI")
+
     ])
 
 
